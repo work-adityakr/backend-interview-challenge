@@ -1,62 +1,62 @@
-import { Router, Request, Response } from 'express';
+import express from 'express';
 import { TaskService } from '../services/taskService';
-import { SyncService } from '../services/syncService';
-import { Database } from '../db/database';
 
-export function createTaskRouter(db: Database): Router {
-  const router = Router();
-  const taskService = new TaskService(db);
-  const syncService = new SyncService(db, taskService);
+export function createTaskRouter(svc: TaskService) {
+  const router = express.Router();
 
-  // Get all tasks
-  router.get('/', async (req: Request, res: Response) => {
+  router.get('/', async (_req, res, next) => { 
     try {
-      const tasks = await taskService.getAllTasks();
-      res.json(tasks);
-    } catch (error) {
-      res.status(500).json({ error: 'Failed to fetch tasks' });
+      const tasks = await svc.getAllTasks();
+      return res.json({ data: tasks }); 
+    } catch (err) {
+      return next(err); 
     }
   });
 
-  // Get single task
-  router.get('/:id', async (req: Request, res: Response) => {
+  router.get('/:id', async (req, res, next) => {
     try {
-      const task = await taskService.getTask(req.params.id);
-      if (!task) {
-        return res.status(404).json({ error: 'Task not found' });
+      const task = await svc.getTask(req.params.id);
+      if (!task) return res.status(404).json({ error: 'Task not found' });
+      return res.json({ data: task }); 
+    } catch (err) {
+      return next(err); 
+    }
+  });
+
+  router.post('/', async (req, res, next) => {
+    try {
+      const taskData = req.body;
+      if (!taskData.title || typeof taskData.title !== 'string') {
+        return res.status(400).json({ error: 'title is required' });
       }
-      res.json(task);
-    } catch (error) {
-      res.status(500).json({ error: 'Failed to fetch task' });
+      if (!taskData.id || typeof taskData.id !== 'string') {
+         return res.status(400).json({ error: 'client-generated id is required' });
+      }
+      const task = await svc.createTask(taskData);
+      return res.status(201).json({ data: task }); 
+    } catch (err) {
+      return next(err); 
     }
   });
 
-  // Create task
-  router.post('/', async (req: Request, res: Response) => {
-    // TODO: Implement task creation endpoint
-    // 1. Validate request body
-    // 2. Call taskService.createTask()
-    // 3. Return created task
-    res.status(501).json({ error: 'Not implemented' });
+  router.put('/:id', async (req, res, next) => {
+    try {
+      const updated = await svc.updateTask(req.params.id, req.body);
+      if (!updated) return res.status(404).json({ error: 'Task not found' });
+      return res.json({ data: updated }); 
+    } catch (err) {
+      return next(err); 
+    }
   });
 
-  // Update task
-  router.put('/:id', async (req: Request, res: Response) => {
-    // TODO: Implement task update endpoint
-    // 1. Validate request body
-    // 2. Call taskService.updateTask()
-    // 3. Handle not found case
-    // 4. Return updated task
-    res.status(501).json({ error: 'Not implemented' });
-  });
-
-  // Delete task
-  router.delete('/:id', async (req: Request, res: Response) => {
-    // TODO: Implement task deletion endpoint
-    // 1. Call taskService.deleteTask()
-    // 2. Handle not found case
-    // 3. Return success response
-    res.status(501).json({ error: 'Not implemented' });
+  router.delete('/:id', async (req, res, next) => {
+    try {
+      const ok = await svc.deleteTask(req.params.id);
+      if (!ok) return res.status(404).json({ error: 'Task not found' });
+      return res.status(204).send(); 
+    } catch (err) {
+      return next(err); 
+    }
   });
 
   return router;

@@ -1,5 +1,5 @@
 export interface Task {
-  id: string;
+  id: string; 
   title: string;
   description?: string;
   completed: boolean;
@@ -7,7 +7,7 @@ export interface Task {
   updated_at: Date;
   is_deleted: boolean;
   sync_status?: 'pending' | 'synced' | 'error';
-  server_id?: string;
+  server_id?: string; 
   last_synced_at?: Date;
 }
 
@@ -15,7 +15,7 @@ export interface SyncQueueItem {
   id: string;
   task_id: string;
   operation: 'create' | 'update' | 'delete';
-  data: Partial<Task>;
+  data: Task;
   created_at: Date;
   retry_count: number;
   error_message?: string;
@@ -47,10 +47,10 @@ export interface BatchSyncRequest {
 
 export interface BatchSyncResponse {
   processed_items: {
-    client_id: string;
-    server_id: string;
+    client_id: string; 
+    server_id: string | null; 
     status: 'success' | 'conflict' | 'error';
-    resolved_data?: Task;
+    resolved_data?: Task | null;
     error?: string;
   }[];
 }
